@@ -1,0 +1,38 @@
+name: DRF API CI
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      # Download the repository files onto the temporary GitHub runner.
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      # Select Python and cache pip packages using requirements.txt.
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Check Python syntax
+        run: python -m compileall -q app
+
+      - name: Run tests
+        run: python -m pytest -q
+
+      - name: Validate application import
+        run: python -c "from app.main import app; print(app.title)"
+
+      # Build only; this workflow does not push or deploy the image.
+      - name: Build Docker image
+        run: docker build --tag drf-employee-api:ci .
